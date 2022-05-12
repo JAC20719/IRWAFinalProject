@@ -1,7 +1,6 @@
 # data.py
 import pandas as pd
 
-
 from nba_api.stats.endpoints import leaguegamelog
 
 def label(row):
