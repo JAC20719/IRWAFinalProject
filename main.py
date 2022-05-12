@@ -16,7 +16,7 @@ from sklearn.metrics import classification_report
 
 '''Imports for nba api'''
 from nba_api.stats.static import players
-from nba_api.stats.endpoints import playergamelog, cumestatsteam, teamgamelog, cumestatsteamgames
+from nba_api.stats.endpoints import playergamelog, cumestatsteam, teamgamelog, cumestatsteamgames, playercareerstats
 from nba_api.stats.library.parameters import SeasonAll
 from nba_api.stats.static import teams 
 
@@ -33,10 +33,39 @@ class EOSClassifier:
         self.clf = RandomForestClassifier() #DecisionTreeClassifier() #MLPClassifier()       # TODO: experiment with different models
         X = [self.extract_features(x) for x in trainX]
         self.clf.fit(X, trainY)
-
+    
+    def is_valid_float(self, element: str) -> bool:
+        try:
+            float(element)
+            return True
+        except ValueError:
+            return False
+    
     def extract_features(self, array):
         #Return the list of features from the parsed data
-        return []
+        #season index 3
+        #game index 2
+        #home_team index 
+        #away_team index
+        
+        features = []
+        season = int(array[1])
+        game_id = int(array[0])
+        home_team = array[4]
+        away_team = array[5]
+        
+        #print(home_team)
+        #print(away_team)
+        
+        home_team_id = teams.find_team_by_abbreviation(home_team)["id"]
+        away_team_id = teams.find_team_by_abbreviation(away_team)["id"]
+        
+        home_team_stats, away_team_stats = game_predict(season, home_team_id, away_team_id, game_id)
+        
+        features.append(home_team_stats)
+        features.append(away_team_stats)
+        
+        return features
 
     def classify(self, testX):
         X = [self.extract_features(x) for x in testX]
@@ -48,8 +77,8 @@ def load_data(file):
         y = []
         for line in fin:
             arr = line.strip().split()
-            X.append(arr[1:])
-            y.append(arr[0])
+            X.append(arr[2:])
+            y.append(arr[1])
         return X, y
 
 
@@ -73,20 +102,33 @@ def parseargs():
     parser.add_argument('--season', required=True)
     return parser.parse_args()
 
-def game_predict(year,home_team,away_team,playoff):
-    winning_team = home_team
-    win_margin = 0
-    
+def game_predict(year,home_team,away_team,game_id):
+    print(home_team)
+    print(year)
     home_game_ids = cumestatsteamgames.CumeStatsTeamGames(team_id=home_team,season=year).get_data_frames()[0].get("GAME_ID").tolist()
-    away_game_ids = cumestatsteamgames.CumeStatsTeamGames(team_id=home_team,season=year).get_data_frames()[0].get("GAME_ID").tolist()
+    away_game_ids = cumestatsteamgames.CumeStatsTeamGames(team_id=away_team,season=year).get_data_frames()[0].get("GAME_ID").tolist()
 
-    home_team_stats = cumestatsteam.CumeStatsTeam(home_team, home_game_ids).get_data_frames()
-    away_team_stats = cumestatsteam.CumeStatsTeam(away_team, away_game_ids).get_data_frames()
-    # print(home_team_stats[0].get("FG_PCT"))
+    #Chop season games to up to game id
+    updated_hgids = []
+    for g in home_game_ids:
+        if g < game_id:
+             updated_hgids.append(g)
+       
+        
+    updated_agids = []
+    for g in away_game_ids:
+        if g < game_id:
+            updated_agids.append(g)
+        
+
+    home_team_stats = cumestatsteam.CumeStatsTeam(home_team, updated_hgids).total_team_stats.get_data_frame()
+    away_team_stats = cumestatsteam.CumeStatsTeam(away_team, updated_agids).total_team_stats.get_data_frame()
     
-    return winning_team, win_margin
+    #print(home_team_stats)
 
-def main(argv):
+    return home_team_stats, away_team_stats
+
+def main():
     args = parseargs()
     trainX, trainY = load_data(args.train)
     testX, testY = load_data(args.test)
@@ -101,16 +143,35 @@ def main(argv):
     classifier.train(trainX, trainY)
     outputs = classifier.classify(testX)
     
-
+    '''
     if args.output is not None:
         with open(args.output, 'w') as fout:
             for output in outputs:
-                print(output, file=fout)
-                    
-    all_players = players.get_players()
+                print(output, file=fout)  
+     '''
+    
+    
     all_teams = teams.get_teams()
+    all_players = players.get_players()
+    
+    #Turn stats into a vector
+    '''
+    jordan_id = players.find_players_by_full_name("Michael Jordan")[0]["id"]
+    jordan_stats = playercareerstats.PlayerCareerStats(jordan_id).career_totals_regular_season.get_data_frame()
+    jordan_stats_vec = jordan_stats.iloc[0].to_list()
+    print(jordan_stats_vec)
+    '''
+    
+    #Retrieve all player's stats
+    '''
+    all_player_ids = [p["id"] for p in all_players]
+    all_player_stats = playercareerstats.PlayerCareerStats(all_player_ids[300]).career_totals_regular_season.get_data_frame()
+    print(all_player_stats)
+    '''
+    
     
     team_abrvs = [t["abbreviation"] for t in all_teams]
+    
     if home_team not in team_abrvs:
         print("Incorrect home team abbreviation")
     if away_team not in team_abrvs:
@@ -118,13 +179,12 @@ def main(argv):
     if re.search('[0-9]{4}-[0-9]{2}',season) == None or len(season) > 7:
         print("Incorrect formatting of season!")
     
-    atl_id = all_teams[0]["id"]
-    cel_id = all_teams[1]["id"]
+    #atl_id = all_teams[0]["id"]
+    #cel_id = all_teams[1]["id"]
     
-    '''2021-22'''
-    #game_predict('2021-22', atl_id, cel_id, False)
-        
+    
+    evaluate(outputs, testY)
     
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main()
