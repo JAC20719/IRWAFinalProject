@@ -75,7 +75,7 @@ def main():
     # all_games.insert(6, "AWAY", "HOME")
 
 
-    all_games.drop_duplicates(subset=["GAME_ID"])
+    all_games = all_games.drop_duplicates(subset=["GAME_ID"])
 
     
 
