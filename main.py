@@ -49,8 +49,9 @@ class EOSClassifier:
         #away_team index
         
         features = []
-        season = int(array[1])
-        game_id = int(array[0])
+        season = array[1][1:]
+        #season = season + "-" + str(int(season[2:]) + 1)
+        game_id = array[0]
         home_team = array[4]
         away_team = array[5]
         
@@ -103,26 +104,28 @@ def parseargs():
     return parser.parse_args()
 
 def game_predict(year,home_team,away_team,game_id):
-    print(home_team)
-    print(year)
-    home_game_ids = cumestatsteamgames.CumeStatsTeamGames(team_id=home_team,season=year).get_data_frames()[0].get("GAME_ID").tolist()
-    away_game_ids = cumestatsteamgames.CumeStatsTeamGames(team_id=away_team,season=year).get_data_frames()[0].get("GAME_ID").tolist()
+    #print(home_team)
+    #print(year)
+    home_game_ids = teamgamelog.TeamGameLog(team_id=home_team,season=year).get_data_frames()[0].get("Game_ID").tolist()
+    away_game_ids = teamgamelog.TeamGameLog(team_id=away_team,season=year).get_data_frames()[0].get("Game_ID").tolist()
 
     #Chop season games to up to game id
-    updated_hgids = []
+    updated_hgids = [game_id]
+    updated_agids = [game_id]
+    '''
     for g in home_game_ids:
         if g < game_id:
              updated_hgids.append(g)
-       
         
-    updated_agids = []
+    
     for g in away_game_ids:
         if g < game_id:
             updated_agids.append(g)
-        
+    '''
 
     home_team_stats = cumestatsteam.CumeStatsTeam(home_team, updated_hgids).total_team_stats.get_data_frame()
     away_team_stats = cumestatsteam.CumeStatsTeam(away_team, updated_agids).total_team_stats.get_data_frame()
+    #print(home_team_stats)
     
     #print(home_team_stats)
 
