@@ -7,6 +7,7 @@ Created on Thu Apr 28 22:20:27 2022
 
 import argparse
 import re
+import time
 
 '''Imports for sklearn'''
 from sklearn.tree import DecisionTreeClassifier
@@ -24,14 +25,14 @@ import pandas as pd
 import sys
 
 class EOSClassifier:
-    def train(self, trainX, trainY):
+    def train(self, trainX, trainY, dic):
         # In this part of the code, we're loading a Scikit-Learn model.
         # We're using a DecisionTreeClassifier... it's simple and lets you
         # focus on building good features.
         # Don't start experimenting with other models until you are confident
         # you have reached the scoring upper bound.
         self.clf = RandomForestClassifier() #DecisionTreeClassifier() #MLPClassifier()       # TODO: experiment with different models
-        X = [self.extract_features(x) for x in trainX]
+        X = [self.extract_features(x,dic) for x in trainX]
         self.clf.fit(X, trainY)
     
     def is_valid_float(self, element: str) -> bool:
@@ -40,8 +41,8 @@ class EOSClassifier:
             return True
         except ValueError:
             return False
-    
-    def extract_features(self, array):
+        
+    def extract_features(self, array, dic):
         #Return the list of features from the parsed data
         #season index 3
         #game index 2
@@ -61,8 +62,14 @@ class EOSClassifier:
         home_team_id = teams.find_team_by_abbreviation(home_team)["id"]
         away_team_id = teams.find_team_by_abbreviation(away_team)["id"]
         
-        home_team_stats, away_team_stats = game_predict(season, home_team_id, away_team_id, game_id)
-        
+        hgids = [i for i in dic[home_team]]
+        agids = [i for i in dic[away_team]]
+    
+        time.sleep(1)
+        home_team_stats = cumestatsteam.CumeStatsTeam(home_team_id, hgids).total_team_stats.get_data_frame()
+        time.sleep(1)
+        away_team_stats = cumestatsteam.CumeStatsTeam(away_team_id, agids).total_team_stats.get_data_frame()
+                
         features.append(home_team_stats)
         features.append(away_team_stats)
         
@@ -76,11 +83,22 @@ def load_data(file):
     with open(file) as fin:
         X = []
         y = []
+        dic = {}
         for line in fin:
             arr = line.strip().split()
+            
+            if arr[6] not in dic.keys():
+                dic[arr[6]] = [arr[2]]
+            else:
+                dic[arr[6]].append(arr[2])
+            if arr[7] not in dic.keys():
+                dic[arr[7]] = [arr[2]]
+            else:
+                dic[arr[7]] = [arr[2]]
+                
             X.append(arr[2:])
             y.append(arr[1])
-        return X, y
+        return X, y, dic
 
 
 def evaluate(outputs, golds):
@@ -103,15 +121,8 @@ def parseargs():
     parser.add_argument('--season', required=True)
     return parser.parse_args()
 
-def game_predict(year,home_team,away_team,game_id):
-    #print(home_team)
-    #print(year)
-    home_game_ids = teamgamelog.TeamGameLog(team_id=home_team,season=year).get_data_frames()[0].get("Game_ID").tolist()
-    away_game_ids = teamgamelog.TeamGameLog(team_id=away_team,season=year).get_data_frames()[0].get("Game_ID").tolist()
-
-    #Chop season games to up to game id
-    updated_hgids = [game_id]
-    updated_agids = [game_id]
+def game_predict(year,home_team,away_team,game_id,dic):
+    
     '''
     for g in home_game_ids:
         if g < game_id:
@@ -123,18 +134,10 @@ def game_predict(year,home_team,away_team,game_id):
             updated_agids.append(g)
     '''
 
-    home_team_stats = cumestatsteam.CumeStatsTeam(home_team, updated_hgids).total_team_stats.get_data_frame()
-    away_team_stats = cumestatsteam.CumeStatsTeam(away_team, updated_agids).total_team_stats.get_data_frame()
-    #print(home_team_stats)
-    
-    #print(home_team_stats)
-
-    return home_team_stats, away_team_stats
-
 def main():
     args = parseargs()
-    trainX, trainY = load_data(args.train)
-    testX, testY = load_data(args.test)
+    trainX, trainY, dic = load_data(args.train)
+    testX, testY, dic = load_data(args.test)
     
     #Get general info from arguments
     current_year = "2022"
@@ -143,7 +146,7 @@ def main():
     season = args.season
 
     classifier = EOSClassifier()
-    classifier.train(trainX, trainY)
+    classifier.train(trainX, trainY,dic)
     outputs = classifier.classify(testX)
     
     '''
