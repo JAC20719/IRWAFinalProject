@@ -1,4 +1,3 @@
-# data.py
 import pandas as pd
 
 from nba_api.stats.endpoints import leaguegamelog
@@ -64,7 +63,7 @@ def main():
             all_games.at[i, "AWAY"] = away
         
 
-    all_games = all_games[["LABEL", "GAME_ID", "SEASON_ID", "TEAM_ABBREVIATION", "WL", "HOME", "AWAY" ]]
+    all_games = all_games[["LABEL", "GAME_ID", "GAME_DATE", "SEASON_ID", "TEAM_ABBREVIATION", "WL", "HOME", "AWAY" ]]
     # for i in range(len(all_games)) :
     #     print(all_games.loc(i))
     # print(all_games)
