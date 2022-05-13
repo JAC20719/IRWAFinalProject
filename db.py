@@ -12,7 +12,7 @@ def create_gamelogs(conn, cur):
     seasons = ["2015-16", "2016-17"]
     
     #Drop Game Logs Table
-    cur.execute('''DROP TABLE gamelogs''')
+    cur.execute('''DROP TABLE IF EXISTS gamelogs''')
     
     #Create Game Logs Table
     cur.execute('''CREATE TABLE gamelogs
@@ -55,7 +55,7 @@ def main():
     conn = sqlite3.connect('example.db')
     cur = conn.cursor()
     
-    #create_gamelogs(conn,cur)
+    create_gamelogs(conn,cur)
     
     cur.execute("SELECT * FROM gamelogs;")
     print(len(cur.fetchall()))
