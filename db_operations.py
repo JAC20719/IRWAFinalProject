@@ -1,13 +1,12 @@
 import sqlite3
 from tkinter.tix import REAL
-conn = sqlite3.connect('example.db')
-c = conn.cursor()
-print("Database created and Successfully Connected to SQLite")
-
-
 
 def get_team_stats(team_id, game_ids):
+    conn = sqlite3.connect('example.db')
+    c = conn.cursor()
+
     t = tuple(game_ids)
+    print(t)
     query = '''SELECT 
                 avg(CAST(PTS as INTEGER)),
                 avg(CAST(FGM as REAL)),
@@ -32,15 +31,24 @@ def get_team_stats(team_id, game_ids):
                 WHERE TEAM_ID = ? AND GAME_ID in {}'''.format(t)
     c.execute(query, (team_id,)) 
 
-def get_prior_games(date,team,season):
+def get_prior_ids(date,team,season):
+    conn = sqlite3.connect('example.db')
+    c = conn.cursor()
+   
+    print(date, team, season)
     query = 'SELECT GAME_ID from gamelogs WHERE TEAM_ID = ? AND SEASON_ID = ? AND date(GAME_DATE) < date(?)'
     c.execute(query, (team,season,date, ))
-    print(c.fetchall())
+    # print(c.fetchall())
+    ids = []
+    for row in c.fetchall():
+        ids.append(row)
+    return ids
 
 def main():
-    get_prior_games("2015-10-30","1610612741","22015")
+    # get_prior_ids("2015-10-30","1610612741","22015")
     #get_team_stats("1610612741", ["0021500927","000000000"])
-    print(c.fetchall())
+    # print(c.fetchall())
+    print()
 
 
 if __name__ == "__main__":
