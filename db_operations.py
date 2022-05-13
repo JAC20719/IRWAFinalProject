@@ -32,14 +32,14 @@ def get_team_stats(team_id, game_ids):
                 WHERE TEAM_ID = ? AND GAME_ID in {}'''.format(t)
     c.execute(query, (team_id,)) 
 
-def get_prior_games(date):
-    query = 'SELECT CAST(GAME_DATE as DATE) from gamelogs where CAST(GAME_DATE as DATE) < ?'
-    c.execute(query, (date, ))
+def get_prior_games(date,team,season):
+    query = 'SELECT GAME_ID from gamelogs WHERE TEAM_ID = ? AND SEASON_ID = ? AND date(GAME_DATE) < date(?)'
+    c.execute(query, (team,season,date, ))
     print(c.fetchall())
 
 def main():
-    get_prior_games("2015-10-30")
-    get_team_stats("1610612741", ["0021500927","000000000"])
+    get_prior_games("2015-10-30","1610612741","22015")
+    #get_team_stats("1610612741", ["0021500927","000000000"])
     print(c.fetchall())
 
 
