@@ -4,6 +4,8 @@ conn = sqlite3.connect('example.db')
 c = conn.cursor()
 print("Database created and Successfully Connected to SQLite")
 
+
+
 def get_team_stats(team_id, game_ids):
     t = tuple(game_ids)
     query = '''SELECT 
@@ -26,10 +28,17 @@ def get_team_stats(team_id, game_ids):
                 avg(CAST(TOV as REAL)),
                 avg(CAST(PF as REAL)),
                 avg(CAST(PTS as REAL))
-                FROM gamelogs WHERE TEAM_ID = ? AND GAME_ID in {}'''.format(t)
+                FROM gamelogs 
+                WHERE TEAM_ID = ? AND GAME_ID in {}'''.format(t)
     c.execute(query, (team_id,)) 
 
+def get_prior_games(date):
+    query = 'SELECT CAST(GAME_DATE as DATE) from gamelogs where CAST(GAME_DATE as DATE) < ?'
+    c.execute(query, (date, ))
+    print(c.fetchall())
+
 def main():
+    get_prior_games("2015-10-30")
     get_team_stats("1610612741", ["0021500927","000000000"])
     print(c.fetchall())
 
