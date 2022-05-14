@@ -6,6 +6,7 @@ Created on Thu Apr 28 22:20:27 2022
 """
 
 import argparse
+from datetime import date
 import re
 import time
 
@@ -104,7 +105,7 @@ class EOSClassifier:
         else:
             features += [0.0, 1.0]
         
-        print("Features: ", features)
+        # print("Features: ", features)
         return features
 
     def classify(self, testX):
@@ -141,6 +142,7 @@ def parseargs():
     parser.add_argument('--home', required=True)
     parser.add_argument('--away', required=True)
     parser.add_argument('--season', required=True)
+    parser.add_argument('--game_date', required=True)
     return parser.parse_args()
 
 def convert_date(date): 
@@ -158,6 +160,7 @@ def main():
     home_team = args.home
     away_team = args.away
     season = args.season
+    game_date = args.game_date
 
     classifier = EOSClassifier()
     classifier.train(trainX, trainY)
@@ -203,6 +206,8 @@ def main():
         print("Incorrect away team abbreviation")
     if re.search('[0-9]{4}-[0-9]{2}',season) == None or len(season) > 7:
         print("Incorrect formatting of season!")
+    if re.search('[0-9]{4}-[0-9]{2}-[0-9]{2}',game_date)  == None or len(game_date) > 10:
+        print("Incorrect formatting of game date!")
     
     #atl_id = all_teams[0]["id"]
     #cel_id = all_teams[1]["id"]
