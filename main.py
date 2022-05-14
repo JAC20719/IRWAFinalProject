@@ -36,6 +36,8 @@ class EOSClassifier:
         # you have reached the scoring upper bound.
         self.clf = MLPClassifier() #DecisionTreeClassifier() #RandomForestClassifier() # TODO: experiment with different models
         X = [self.extract_features(x) for x in trainX]
+        print(len(X), len(X[0]))
+        print(len(trainY), len(trainY[0]))
         self.clf.fit(X, trainY)
     
     def is_valid_float(self, element: str) -> bool:
@@ -53,9 +55,10 @@ class EOSClassifier:
         #season = season + "-" + str(int(season[2:]) + 1)
         game_id = array[0]
         # print(game_id)
-        home_team = array[4]
-        away_team = array[5]
+        home_team = array[5]
+        away_team = array[6]
         game_date = array[1]        
+        print(game_id, game_date, home_team, away_team)
         
         home_team_id = teams.find_team_by_abbreviation(home_team)["id"]
         away_team_id = teams.find_team_by_abbreviation(away_team)["id"]
@@ -101,10 +104,12 @@ class EOSClassifier:
             features.append(f)
 
         # home/away feature (0.56)
-        if home_team == array[3]:
-            features += [1.0, 0.0]
-        else:
-            features += [0.0, 1.0]
+        # if home_team == array[3]:
+        #     features += [1.0, 0.0]
+        # if away_team == array[3]:
+        #     features += [0.0, 1.0]
+        # else:
+        #     features += [0.0, 0.0]
         
         # print("Features: ", features)
         return features
@@ -119,9 +124,7 @@ def load_data(file):
         y = []
         for line in fin:
             arr = line.strip().split()
-            # X.append(arr[2:])
-            X.append(list(arr[i] for i in [2,3,4,5,7,8]))
-            print(X)
+            X.append(arr[2:])
             y.append(arr[1])
         return X, y
 
@@ -154,8 +157,10 @@ def convert_date(date):
     return d
 
 def create_query_vec(game_date, season, home_team, away_team):
-    
-    print()
+    game_id = db_operations.get_gameID(season, game_date, home_team, away_team)[0][0]
+    vec = [game_id, game_date, season, "", "", home_team, away_team, ""]
+    # print(vec)
+    return [vec]
 
 def main():
     args = parseargs()
@@ -168,13 +173,16 @@ def main():
     away_team = args.away
     season = args.season
     game_date = args.game_date
+    season = "2" + args.season[0:4]
+
+    query_vec = create_query_vec(game_date, season, home_team, away_team)
 
     classifier = EOSClassifier()
     classifier.train(trainX, trainY)
     outputs = classifier.classify(testX)
 
-    query_vec = create_query_vec(game_date, season, home_team, away_team)
-    
+    out = classifier.classify(query_vec)
+    print("prediction: ", out)
     
     if args.output is not None:
         with open(args.output, 'w') as fout:
@@ -205,7 +213,6 @@ def main():
     all_player_stats = playercareerstats.PlayerCareerStats(all_player_ids[300]).career_totals_regular_season.get_data_frame()
     print(all_player_stats)
     '''
-    
     
     team_abrvs = [t["abbreviation"] for t in all_teams]
     

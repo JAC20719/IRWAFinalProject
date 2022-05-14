@@ -78,6 +78,15 @@ def get_prior_ids(date,team,season):
         ids.append(row[0])
     return ids
 
+def get_gameID(season, date, home, away):
+    print(season,date,home,away)
+    conn = sqlite3.connect('example.db')
+    c = conn.cursor()
+
+    query = 'SELECT GAME_ID from gamelogs WHERE SEASON_ID = ? and GAME_DATE = ? and (TEAM_ABBREVIATION = ? or TEAM_ABBREVIATION = ?)'
+    c.execute(query, (season, date, home, away, ))
+    return c.fetchall()
+
 def main():
     #get_prior_ids("2015-10-30","1610612741","22015")
     #print(get_team_stats("1610612741", ["0021500927"]))
