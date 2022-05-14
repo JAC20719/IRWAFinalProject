@@ -32,7 +32,7 @@ class EOSClassifier:
         # focus on building good features.
         # Don't start experimenting with other models until you are confident
         # you have reached the scoring upper bound.
-        self.clf = RandomForestClassifier() #DecisionTreeClassifier() #MLPClassifier()       # TODO: experiment with different models
+        self.clf = MLPClassifier() #DecisionTreeClassifier() #RandomForestClassifier() # TODO: experiment with different models
         X = [self.extract_features(x) for x in trainX]
         self.clf.fit(X, trainY)
     
@@ -58,20 +58,46 @@ class EOSClassifier:
         home_team_id = teams.find_team_by_abbreviation(home_team)["id"]
         away_team_id = teams.find_team_by_abbreviation(away_team)["id"]
 
-        home_game_ids = db_operations.get_prior_ids(game_date, away_team_id, season)
-        print("home_ids: ", home_game_ids)
+        home_game_ids = db_operations.get_prior_ids(game_date, home_team_id, season)
+        #print("home_ids: ", home_game_ids)
         away_game_ids = db_operations.get_prior_ids(game_date, away_team_id, season)
         
-        # print(home_team_id, away_team_id)
-        # home_team_stats, away_team_stats = game_predict(season, home_team_id, away_team_id, game_id, game_date)
-        home_team_stats = db_operations.get_team_stats(home_team_id, home_game_ids)
-        away_team_stats = db_operations.get_team_stats(away_team_id, home_game_ids)
-
-        print("home_stats: ", home_team_stats)
-
-        # features.append(home_team_stats)
-        # features.append(away_team_stats)
+        #Append game id to ids if first game
+        if(len(home_game_ids)) == 0:
+            home_game_ids.append(game_id)
+        if(len(away_game_ids)) == 0:
+            away_game_ids.append(game_id)
         
+        home_team_stats = []
+        count = 0
+        for stats in db_operations.get_team_stats(home_team_id, home_game_ids):
+            count += 1
+            for s in stats:
+                if s != None:
+                    home_team_stats.append(float(f'{s:.3f}'))
+                else:
+                    home_team_stats.append(0)
+        
+        away_team_stats = []
+        for stats in db_operations.get_team_stats(away_team_id, away_game_ids):
+            for s in stats:
+                if s != None:
+                    away_team_stats.append(float(f'{s:.3f}'))
+                else:
+                    away_team_stats.append(0)
+        '''         
+        DOHome = (.4*home_team_stats[3])-(.25*home_team_stats[16])+(.2*home_team_stats[10])+(.15*home_team_stats[9])
+        DOAway = (.4*away_team_stats[3])-(.25*away_team_stats[16])+(.2*away_team_stats[10])+(.15*away_team_stats[9])
+
+        features.append(DOHome)
+        features.append(home_team_stats[19]/count)
+        features.append(DOAway)
+        features.append(away_team_stats[19]/count)
+        '''
+        features = home_team_stats
+        for f in away_team_stats:
+            features.append(f)
+        #print("Features: ", features)
         return features
 
     def classify(self, testX):
@@ -129,12 +155,12 @@ def main():
     classifier.train(trainX, trainY)
     outputs = classifier.classify(testX)
     
-    '''
+    
     if args.output is not None:
         with open(args.output, 'w') as fout:
             for output in outputs:
                 print(output, file=fout)  
-     '''
+     
     
     
     all_teams = teams.get_teams()
