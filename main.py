@@ -97,7 +97,14 @@ class EOSClassifier:
         features = home_team_stats
         for f in away_team_stats:
             features.append(f)
-        #print("Features: ", features)
+
+        # home/away feature (0.56)
+        if home_team == array[3]:
+            features += [1.0, 0.0]
+        else:
+            features += [0.0, 1.0]
+        
+        print("Features: ", features)
         return features
 
     def classify(self, testX):
@@ -128,6 +135,7 @@ def parseargs():
     parser.add_argument('--train', required=True)
     parser.add_argument('--test', required=True)
     parser.add_argument('--output')
+    parser.add_argument('--errors')
     
     #Arguments required for betting function
     parser.add_argument('--home', required=True)
@@ -161,6 +169,11 @@ def main():
             for output in outputs:
                 print(output, file=fout)  
      
+    if args.errors is not None:
+        with open(args.errors, 'w') as fout:
+            for y, h, x in zip(testY, outputs, testX):
+                if y != h:
+                    print(y, h, x, sep='\t', file=fout)
     
     
     all_teams = teams.get_teams()
