@@ -9,6 +9,7 @@ import argparse
 from datetime import date
 import re
 import time
+from tkinter import W
 
 '''Imports for sklearn'''
 from sklearn.tree import DecisionTreeClassifier
@@ -52,8 +53,8 @@ class EOSClassifier:
         #season = season + "-" + str(int(season[2:]) + 1)
         game_id = array[0]
         # print(game_id)
-        home_team = array[5]
-        away_team = array[6]
+        home_team = array[4]
+        away_team = array[5]
         game_date = array[1]        
         
         home_team_id = teams.find_team_by_abbreviation(home_team)["id"]
@@ -86,7 +87,7 @@ class EOSClassifier:
                     away_team_stats.append(float(f'{s:.3f}'))
                 else:
                     away_team_stats.append(0)
-        '''         
+          
         DOHome = (.4*home_team_stats[3])-(.25*home_team_stats[16])+(.2*home_team_stats[10])+(.15*home_team_stats[9])
         DOAway = (.4*away_team_stats[3])-(.25*away_team_stats[16])+(.2*away_team_stats[10])+(.15*away_team_stats[9])
 
@@ -94,7 +95,7 @@ class EOSClassifier:
         features.append(home_team_stats[19]/count)
         features.append(DOAway)
         features.append(away_team_stats[19]/count)
-        '''
+        
         features = home_team_stats
         for f in away_team_stats:
             features.append(f)
@@ -118,7 +119,9 @@ def load_data(file):
         y = []
         for line in fin:
             arr = line.strip().split()
-            X.append(arr[2:])
+            # X.append(arr[2:])
+            X.append(list(arr[i] for i in [2,3,4,5,7,8]))
+            print(X)
             y.append(arr[1])
         return X, y
 
@@ -150,6 +153,10 @@ def convert_date(date):
     d = n[1] + "/" + n[2] + "/" + n[0]
     return d
 
+def create_query_vec(game_date, season, home_team, away_team):
+    
+    print()
+
 def main():
     args = parseargs()
     trainX, trainY = load_data(args.train)
@@ -165,6 +172,8 @@ def main():
     classifier = EOSClassifier()
     classifier.train(trainX, trainY)
     outputs = classifier.classify(testX)
+
+    query_vec = create_query_vec(game_date, season, home_team, away_team)
     
     
     if args.output is not None:
