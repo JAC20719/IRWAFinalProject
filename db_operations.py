@@ -78,13 +78,15 @@ def get_prior_ids(date,team,season):
         ids.append(row[0])
     return ids
 
-def get_gameID(season, date, home, away):
-    print(season,date,home,away)
+def get_gameID(season, home, away):
+    print(season,home,away)
     conn = sqlite3.connect('example.db')
     c = conn.cursor()
 
-    query = 'SELECT GAME_ID from gamelogs WHERE SEASON_ID = ? and GAME_DATE = ? and (TEAM_ABBREVIATION = ? or TEAM_ABBREVIATION = ?)'
-    c.execute(query, (season, date, home, away, ))
+    query = '''SELECT MAX(GAME_DATE), GAME_ID
+                FROM gamelogs 
+                WHERE SEASON_ID = ? AND (TEAM_ABBREVIATION = ? or TEAM_ABBREVIATION = ?)'''
+    c.execute(query, (season, home, away, ))
     return c.fetchall()
 
 def get_player_stats(team_id,season):
@@ -100,7 +102,8 @@ def main():
     #get_prior_ids("2015-10-30","1610612741","22015")
     #print(get_team_stats("1610612741", ["0021500927"]))
     # print(c.fetchall())
-    print()
+    #print(get_gameID("22015", "DET", "CLE"))
+    return
 
 
 if __name__ == "__main__":
