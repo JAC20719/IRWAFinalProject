@@ -1,5 +1,8 @@
 import sqlite3
+import requests
 from tkinter.tix import REAL
+from nba_api.stats.endpoints import playercareerstats
+
 
 def dict_from_row(row):
     return dict(zip(row.keys(), row))
@@ -93,9 +96,16 @@ def get_player_stats(team_id,season):
     conn = sqlite3.connect('example.db')
     c = conn.cursor()
     
-    query = 'SELECT PLAYER_ID from rosters WHERE TeamID = ? AND SEASON = ?'
+    query = 'SELECT PLAYER_ID FROM rosters WHERE TeamID = ? AND SEASON = ?'
     c.execute(query, (team_id,season))
-    
+    all_players_stats = []
+    for ID in c.fetchall():
+        query = 'SELECT * FROM playerstats WHERE PLAYER_ID = ?'
+        c.execute(query, (ID[0], ))
+        player_stats = c.fetchall()
+        player_stats_vec = list(player_stats[0])
+        all_players_stats.append(player_stats_vec)
+    return all_players_stats
     #Add more functionality to return all the player's stats for that season and player_id
 
 def main():
@@ -103,6 +113,14 @@ def main():
     #print(get_team_stats("1610612741", ["0021500927"]))
     # print(c.fetchall())
     #print(get_gameID("22015", "DET", "CLE"))
+    #print(get_player_stats("1610612739","2015"))
+    
+    '''
+    source = requests.get("https://api.lineups.com/nba/fetch/lineups/gateway").json()
+    print(source)
+    for player in source['data'][0]['away_players']:
+        print(player['name'])
+    '''
     return
 
 
