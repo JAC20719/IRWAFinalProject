@@ -87,6 +87,15 @@ def get_gameID(season, date, home, away):
     c.execute(query, (season, date, home, away, ))
     return c.fetchall()
 
+def get_player_stats(team_id,season):
+    conn = sqlite3.connect('example.db')
+    c = conn.cursor()
+    
+    query = 'SELECT PLAYER_ID from rosters WHERE TeamID = ? AND SEASON = ?'
+    c.execute(query, (team_id,season))
+    
+    #Add more functionality to return all the player's stats for that season and player_id
+
 def main():
     #get_prior_ids("2015-10-30","1610612741","22015")
     #print(get_team_stats("1610612741", ["0021500927"]))
