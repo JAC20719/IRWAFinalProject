@@ -6,8 +6,9 @@ Created on Fri May 13 12:39:30 2022
 """
 
 import sqlite3
-from nba_api.stats.endpoints import leaguegamelog, commonteamroster
+from nba_api.stats.endpoints import leaguegamelog, commonteamroster, playercareerstats
 from nba_api.stats.static import teams
+from nba_api.stats.static import players
 import time
 
 def create_gamelogs(conn, cur):
@@ -86,12 +87,58 @@ def create_rosters(conn, cur):
             time.sleep(1)
             rosters.to_sql(name='rosters', con=conn, if_exists='append', index=False)
 
+def create_player_stats(conn, cur):
+    #Drop Rosters Table
+    cur.execute('''DROP TABLE IF EXISTS playerstats''')
+    
+    #Create Rosters Table
+    cur.execute('''CREATE TABLE playerstats
+                (PLAYER_ID text,
+                 LEAGUE_ID text, 
+                 Team_ID text,
+                 PLAYER_AGE text,
+                 GP text,
+                 GS text, 
+                 MIN text, 
+                 FGM text, 
+                 FGA text, 
+                 FG_PCT text, 
+                 FG3M text, 
+                 FG3A text, 
+                 FG3_PCT text, 
+                 FTM text, 
+                 FTA text, 
+                 FT_PCT text, 
+                 OREB text, 
+                 DREB text, 
+                 REB text, 
+                 AST text,
+                 STL text, 
+                 BLK text, 
+                 TOV text, 
+                 PF text, 
+                 PTS text)''')
+    
+    all_players = players.get_players()
+    all_player_ids = [p["id"] for p in all_players]
+    
+    for ID in all_player_ids:
+        player_stats = playercareerstats.PlayerCareerStats(ID)
+        career_stats = player_stats.career_totals_regular_season.get_data_frame()
+        career_stats.to_sql(name='playerstats', con=conn, if_exists='append', index=False)
+    
 def main():
     conn = sqlite3.connect('example.db')
     cur = conn.cursor()
     
     # create_gamelogs(conn,cur)
-    create_rosters(conn, cur)
+    #create_rosters(conn, cur)
+    #create_player_stats(conn, cur) #!!!!WARNING, DO NOT RUN, OPERATION Takes 1.5hrs!!!###
+    
+    '''
+    cur.execute('SELECT * FROM playerstats')
+    print(len(cur.fetchall()))
+    '''
     
     # cur.execute("SELECT * FROM gamelogs;")
     # print(len(cur.fetchall()))
