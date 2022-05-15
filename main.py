@@ -27,6 +27,8 @@ from nba_api.stats.static import teams
 import pandas as pd 
 import sys
 import db_operations
+from matplotlib import pyplot
+
 
 class EOSClassifier:
     def train(self, trainX, trainY):
@@ -35,11 +37,19 @@ class EOSClassifier:
         # focus on building good features.
         # Don't start experimenting with other models until you are confident
         # you have reached the scoring upper bound.
-        self.clf = MLPClassifier() #RandomForestClassifier()  #DecisionTreeClassifier()  # TODO: experiment with different models
+        self.clf =  RandomForestClassifier() #MLPClassifier() #DecisionTreeClassifier()  # TODO: experiment with different models
         X = [self.extract_features(x) for x in trainX]
         print(len(X), len(X[0]))
         print(len(trainY), len(trainY[0]))
         self.clf.fit(X, trainY)
+        # get importance
+        importance = self.clf.feature_importances_
+        # summarize feature importance
+        for i,v in enumerate(importance):
+        	print('Feature: %0d, Score: %.5f' % (i,v))
+        # plot feature importance
+        pyplot.bar([x for x in range(len(importance))], importance)
+        pyplot.show()
     
     def is_valid_float(self, element: str) -> bool:
         try:
@@ -91,30 +101,32 @@ class EOSClassifier:
                     away_team_stats.append(float(f'{s:.3f}'))
                 else:
                     away_team_stats.append(0)
-          
+        features = []
+        features.append(home_team_stats[0])
+        features.append(away_team_stats[0])
+        '''
         features = home_team_stats
         for f in away_team_stats:
             features.append(f)
-            
-        
+        '''
         DOHome = (.4*home_team_stats[3])-(.25*home_team_stats[16])+(.2*home_team_stats[10])+(.15*home_team_stats[9])
         DOAway = (.4*away_team_stats[3])-(.25*away_team_stats[16])+(.2*away_team_stats[10])+(.15*away_team_stats[9])
 
+        
         features.append(DOHome)
-        win_percentage = home_team_stats[19]/count
-        features.append(float(f'{win_percentage:.3f}'))
         features.append(DOAway)
-        win_percentage = away_team_stats[19]/count
-        features.append(float(f'{win_percentage:.3f}'))
         
-        home_players_stats = db_operations.get_player_stats(home_team_id, season[1:])
-        away_players_stats = db_operations.get_player_stats(away_team_id, season[1:])
         
-        c1 = cluster(home_players_stats)
-        c2 = cluster(away_players_stats)
         
-        cosine_similarity= cosine_sim(c1, c2)
-        features.append(cosine_similarity)
+        home_players_stats = db_operations.get_player_stats(home_team_id, season[1:])[4:]
+        away_players_stats = db_operations.get_player_stats(away_team_id, season[1:])[4:]
+        
+        
+        c3 = cluster(home_players_stats)
+        c4 = cluster(away_players_stats)
+        
+        similarity= cosine_sim(c3, c4)
+        features.append(similarity)
         
         # home/away feature (0.56)
         '''
@@ -170,6 +182,33 @@ def cosine_sim(x, y):
     if num == 0:
         return 0
     return num / (norm(x) * norm(y))
+
+def dice_sim(x, y):
+    num = dictdot(x, y)
+    if num == 0:
+        return 0
+    # TODO: implement
+    return (2 * num) / (sum(x) + sum(y))
+
+
+def jaccard_sim(x, y):
+    num = dictdot(x, y)
+    if num == 0:
+        return 0
+    x_sum = sum(x)
+    y_sum = sum(y)
+    if x_sum + y_sum - num == 0:
+        return 0
+    return num / (x_sum + y_sum - num)  # TODO: implement
+
+
+def overlap_sim(x, y):
+    num = dictdot(x, y)
+    if num == 0:
+        return 0
+    # TODO: implement
+    return num / min(sum(x), sum(y))
+
 
 def load_data(file):
     with open(file) as fin:
@@ -244,6 +283,7 @@ def main():
     
     '''----------PREDICT OUTCOME OF USER INPUTTED MATCHUP------------'''
     #Get general info from arguments
+    '''
     stop = "No"
     while(stop != "Yes"):
         
@@ -271,6 +311,7 @@ def main():
             print("prediction: ", out)
         
         stop = input("Quit? (Yes/No): ")
+    '''
     '''---------------------------------------------------------------'''
     
    
