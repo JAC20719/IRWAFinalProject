@@ -10,6 +10,7 @@ from datetime import date
 import re
 import time
 from tkinter import W
+from numpy.linalg import norm
 
 '''Imports for sklearn'''
 from sklearn.tree import DecisionTreeClassifier
@@ -106,6 +107,15 @@ class EOSClassifier:
         win_percentage = away_team_stats[19]/count
         features.append(float(f'{win_percentage:.3f}'))
         
+        home_players_stats = db_operations.get_player_stats(home_team_id, season[1:])
+        away_players_stats = db_operations.get_player_stats(away_team_id, season[1:])
+        
+        c1 = cluster(home_players_stats)
+        c2 = cluster(away_players_stats)
+        
+        cosine_similarity= cosine_sim(c1, c2)
+        features.append(cosine_similarity)
+        
         # home/away feature (0.56)
         '''
         if home_team == array[3]:
@@ -123,6 +133,43 @@ class EOSClassifier:
     def classify(self, testX):
         X = [self.extract_features(x) for x in testX]
         return self.clf.predict(X)
+
+#Clustering     
+
+def cluster(vectors):
+    cluster = []
+    if len(vectors) >= 1:
+        for v in vectors[0]:
+            if v != None:
+                cluster.append(float(v))
+            else:
+                cluster.append(0)
+        if len(vectors) >= 2:
+            for v in vectors[1:]:
+                for i in range(0,len(v)):
+                    if v[i] != None:
+                        cluster[i] += float(v[i])
+                
+    cluster = [c / len(vectors) for c in cluster]
+    return cluster
+
+# Vector Similarity
+
+def dictdot(x, y):
+    '''
+    Computes the dot product of vectors x and y, represented as sparse dictionaries.
+    '''
+    return sum(x[i] * y[i] for i in range(0,len(x)))
+
+
+def cosine_sim(x, y):
+    '''
+    Computes the cosine similarity between two sparse term vectors represented as dictionaries.
+    '''
+    num = dictdot(x, y)
+    if num == 0:
+        return 0
+    return num / (norm(x) * norm(y))
 
 def load_data(file):
     with open(file) as fin:
