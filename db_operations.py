@@ -79,11 +79,11 @@ def get_prior_ids(date,team,season):
     return ids
 
 def get_gameID(season, home, away):
-    print(season,home,away)
+    #print(season,home,away)
     conn = sqlite3.connect('example.db')
     c = conn.cursor()
 
-    query = '''SELECT MAX(GAME_DATE), GAME_ID
+    query = '''SELECT MAX(GAME_DATE), GAME_ID, TEAM_ABBREVIATION
                 FROM gamelogs 
                 WHERE SEASON_ID = ? AND (TEAM_ABBREVIATION = ? or TEAM_ABBREVIATION = ?)'''
     c.execute(query, (season, home, away, ))

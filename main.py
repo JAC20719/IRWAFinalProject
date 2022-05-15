@@ -58,7 +58,7 @@ class EOSClassifier:
         home_team = array[5]
         away_team = array[6]
         game_date = array[1]        
-        print(game_id, game_date, home_team, away_team)
+        #print(game_id, game_date, home_team, away_team)
         
         home_team_id = teams.find_team_by_abbreviation(home_team)["id"]
         away_team_id = teams.find_team_by_abbreviation(away_team)["id"]
@@ -91,6 +91,10 @@ class EOSClassifier:
                 else:
                     away_team_stats.append(0)
           
+        features = home_team_stats
+        for f in away_team_stats:
+            features.append(f)
+            
         DOHome = (.4*home_team_stats[3])-(.25*home_team_stats[16])+(.2*home_team_stats[10])+(.15*home_team_stats[9])
         DOAway = (.4*away_team_stats[3])-(.25*away_team_stats[16])+(.2*away_team_stats[10])+(.15*away_team_stats[9])
 
@@ -98,19 +102,20 @@ class EOSClassifier:
         features.append(home_team_stats[19]/count)
         features.append(DOAway)
         features.append(away_team_stats[19]/count)
-        
-        features = home_team_stats
-        for f in away_team_stats:
-            features.append(f)
 
         # home/away feature (0.56)
-        # if home_team == array[3]:
-        #     features += [1.0, 0.0]
-        # if away_team == array[3]:
-        #     features += [0.0, 1.0]
-        # else:
-        #     features += [0.0, 0.0]
-        
+        '''
+        if home_team == array[3]:
+            features.append(1.0)
+            features.append(0.0)
+        if away_team == array[3]:
+            features.append(0.0)
+            features.append(1.0)
+        else:
+            features.append(0.0)
+            features.append(0.0)
+        '''
+
         # print("Features: ", features)
         return features
 
@@ -145,10 +150,9 @@ def parseargs():
     parser.add_argument('--errors')
     
     #Arguments required for betting function
-    parser.add_argument('--home', required=True)
-    parser.add_argument('--away', required=True)
-    parser.add_argument('--season', required=True)
-    parser.add_argument('--game_date', required=True)
+    #parser.add_argument('--home', required=True)
+    #parser.add_argument('--away', required=True)
+    #parser.add_argument('--season', required=True)
     return parser.parse_args()
 
 def convert_date(date): 
@@ -156,33 +160,23 @@ def convert_date(date):
     d = n[1] + "/" + n[2] + "/" + n[0]
     return d
 
-def create_query_vec(game_date, season, home_team, away_team):
-    game_id = db_operations.get_gameID(season, game_date, home_team, away_team)[0][0]
-    vec = [game_id, game_date, season, "", "", home_team, away_team, ""]
-    # print(vec)
+def create_query_vec( season, home_team, away_team):
+    game_info = db_operations.get_gameID(season, home_team, away_team)
+    game_id = game_info[0][1]
+    game_date = game_info[0][0]
+    team_abr = game_info[0][2]
+    vec = [game_id, game_date, season, team_abr, "", home_team, away_team]
     return [vec]
 
 def main():
+    '''----------------------TRAIN ALGORITHM-------------------------'''
     args = parseargs()
     trainX, trainY = load_data(args.train)
     testX, testY = load_data(args.test)
     
-    #Get general info from arguments
-    current_year = "2022"
-    home_team = args.home
-    away_team = args.away
-    season = args.season
-    game_date = args.game_date
-    season = "2" + args.season[0:4]
-
-    query_vec = create_query_vec(game_date, season, home_team, away_team)
-
     classifier = EOSClassifier()
     classifier.train(trainX, trainY)
     outputs = classifier.classify(testX)
-
-    out = classifier.classify(query_vec)
-    print("prediction: ", out)
     
     if args.output is not None:
         with open(args.output, 'w') as fout:
@@ -195,9 +189,46 @@ def main():
                 if y != h:
                     print(y, h, x, sep='\t', file=fout)
     
+    evaluate(outputs, testY)
+    '''--------------------------------------------------------------'''
     
-    all_teams = teams.get_teams()
-    all_players = players.get_players()
+    
+    
+    '''----------PREDICT OUTCOME OF USER INPUTTED MATCHUP------------'''
+    #Get general info from arguments
+    stop = "No"
+    while(stop != "Yes"):
+        
+        home_team = input("Enter home team: ")
+        away_team = input("Enter away team: ")
+        season = input("Enter season: ")
+        season = "2" + season[0:4]
+        
+        all_teams = teams.get_teams()
+        #all_players = players.get_players()
+        team_abrvs = [t["abbreviation"] for t in all_teams]
+        
+        if home_team not in team_abrvs:
+            print("Incorrect home team abbreviation")
+        if away_team not in team_abrvs:
+            print("Incorrect away team abbreviation")
+        if re.search('[0-9]{4}-[0-9]{2}',season) == None or len(season) > 7:
+            print("Incorrect formatting of season!")
+    
+        query_vec = create_query_vec(season, home_team, away_team)
+        if (None in query_vec[0]):
+            print("Woops, try again!")
+        else:
+            out = classifier.classify(query_vec)
+            print("prediction: ", out)
+        
+        stop = input("Quit? (Yes/No): ")
+    '''---------------------------------------------------------------'''
+    
+   
+    
+    
+    
     
     #Turn stats into a vector
     '''
@@ -214,22 +245,12 @@ def main():
     print(all_player_stats)
     '''
     
-    team_abrvs = [t["abbreviation"] for t in all_teams]
     
-    if home_team not in team_abrvs:
-        print("Incorrect home team abbreviation")
-    if away_team not in team_abrvs:
-        print("Incorrect away team abbreviation")
-    if re.search('[0-9]{4}-[0-9]{2}',season) == None or len(season) > 7:
-        print("Incorrect formatting of season!")
-    if re.search('[0-9]{4}-[0-9]{2}-[0-9]{2}',game_date)  == None or len(game_date) > 10:
-        print("Incorrect formatting of game date!")
     
     #atl_id = all_teams[0]["id"]
     #cel_id = all_teams[1]["id"]
     
     
-    evaluate(outputs, testY)
     
 
 if __name__ == "__main__":
