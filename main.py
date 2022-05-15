@@ -34,7 +34,7 @@ class EOSClassifier:
         # focus on building good features.
         # Don't start experimenting with other models until you are confident
         # you have reached the scoring upper bound.
-        self.clf = MLPClassifier() #DecisionTreeClassifier() #RandomForestClassifier() # TODO: experiment with different models
+        self.clf = MLPClassifier() #RandomForestClassifier()  #DecisionTreeClassifier()  # TODO: experiment with different models
         X = [self.extract_features(x) for x in trainX]
         print(len(X), len(X[0]))
         print(len(trainY), len(trainY[0]))
@@ -95,14 +95,17 @@ class EOSClassifier:
         for f in away_team_stats:
             features.append(f)
             
+        
         DOHome = (.4*home_team_stats[3])-(.25*home_team_stats[16])+(.2*home_team_stats[10])+(.15*home_team_stats[9])
         DOAway = (.4*away_team_stats[3])-(.25*away_team_stats[16])+(.2*away_team_stats[10])+(.15*away_team_stats[9])
 
         features.append(DOHome)
-        features.append(home_team_stats[19]/count)
+        win_percentage = home_team_stats[19]/count
+        features.append(float(f'{win_percentage:.3f}'))
         features.append(DOAway)
-        features.append(away_team_stats[19]/count)
-
+        win_percentage = away_team_stats[19]/count
+        features.append(float(f'{win_percentage:.3f}'))
+        
         # home/away feature (0.56)
         '''
         if home_team == array[3]:
@@ -111,11 +114,9 @@ class EOSClassifier:
         if away_team == array[3]:
             features.append(0.0)
             features.append(1.0)
-        else:
-            features.append(0.0)
-            features.append(0.0)
         '''
-
+        
+        #print(features)
         # print("Features: ", features)
         return features
 
