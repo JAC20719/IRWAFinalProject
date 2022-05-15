@@ -34,8 +34,7 @@ def get_team_stats(team_id, game_ids):
                     avg(CAST(BLK as REAL)) as blk,
                     avg(CAST(TOV as REAL)) as tov,
                     avg(CAST(PF as REAL)) as pf,
-                    avg(CAST(PTS as REAL)) as pts,
-                    (SELECT COUNT(WL) FROM gamelogs WHERE WL = 'w')
+                    avg(CAST(PTS as REAL)) as pts
                     FROM gamelogs 
                     WHERE TEAM_ID = ? AND GAME_ID in {}'''.format(t)
         c.execute(query, (team_id,)) 
@@ -60,8 +59,7 @@ def get_team_stats(team_id, game_ids):
                     avg(CAST(BLK as REAL)) as blk,
                     avg(CAST(TOV as REAL)) as tov,
                     avg(CAST(PF as REAL)) as pf,
-                    avg(CAST(PTS as INTEGER)) as pts,
-                    (SELECT COUNT(WL) FROM gamelogs WHERE WL = 'w')
+                    avg(CAST(PTS as INTEGER)) as pts
                     FROM gamelogs 
                     WHERE TEAM_ID = ? AND GAME_ID = ?'''
         c.execute(query, (team_id,game_ids[0])) 
