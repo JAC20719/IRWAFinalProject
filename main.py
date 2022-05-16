@@ -119,6 +119,7 @@ class EOSClassifier:
         
         
         home_players_stats = db_operations.get_player_stats(home_team_id, season[1:])[4:]
+        # print("HPS: ", home_players_stats)
         away_players_stats = db_operations.get_player_stats(away_team_id, season[1:])[4:]
         
         
@@ -127,6 +128,51 @@ class EOSClassifier:
         
         similarity= cosine_sim(c3, c4)
         features.append(similarity)
+
+        home_team_standings = db_operations.get_standings(home_team_id, season)[6:]
+        print(home_team_standings)
+        away_team_standings = db_operations.get_standings(away_team_id, season)[6:]
+
+        # print("h standing features")
+        for i in home_team_standings:
+            # print(i)
+            if i == None or '- ' in i or 'W' in i or 'L' in i or i.isalpha():
+                i = 0.0
+            elif re.search("[0-9]{1}-[0-9]{1}",i) != None:
+                nums = i.split('-')
+                if len(nums) == 2:
+                    # print(nums[0], nums[1])
+                    w = float(nums[0])
+                    l = float(nums[1])
+                    if (w + l == 0):
+                        win_pct == 0.0
+                    else: 
+                        win_pct = w / (w + l)
+                    # (float(f'{s:.3f}'))
+                    win_pct = float(f'{win_pct:.3f}')
+                    i = str(win_pct)
+                    # print(i)
+            # print(i)
+            features.append(i)
+        # print(home_team_standings)
+        for j in away_team_standings:
+            # print(j)
+            if j == None or '- ' in j or 'W' in j or 'L' in j or j.isalpha():
+                j = 0.0
+            elif re.search("[0-9]{1}-[0-9]{1}",j) != None:
+                nums = j.split('-')
+                if len(nums) == 2:
+                    w = float(nums[0])
+                    l = float(nums[1])
+                    if (w + l == 0):
+                        win_pct == 0.0
+                    else: 
+                        win_pct = w / (w + l)
+                    # (float(f'{s:.3f}'))
+                    win_pct = float(f'{win_pct:.3f}')
+                    j = str(win_pct)
+                    # print(i)
+            features.append(j)
         
         # home/away feature (0.56)
         '''

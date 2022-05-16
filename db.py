@@ -6,7 +6,7 @@ Created on Fri May 13 12:39:30 2022
 """
 
 import sqlite3
-from nba_api.stats.endpoints import leaguegamelog, commonteamroster, playercareerstats
+from nba_api.stats.endpoints import leaguegamelog, commonteamroster, playercareerstats, leaguestandings
 from nba_api.stats.static import teams
 from nba_api.stats.static import players
 import time
@@ -88,10 +88,10 @@ def create_rosters(conn, cur):
             rosters.to_sql(name='rosters', con=conn, if_exists='append', index=False)
 
 def create_player_stats(conn, cur):
-    #Drop Rosters Table
+    #Drop Playerstats Table
     cur.execute('''DROP TABLE IF EXISTS playerstats''')
     
-    #Create Rosters Table
+    #Create Playerstats Table
     cur.execute('''CREATE TABLE playerstats
                 (PLAYER_ID text,
                  LEAGUE_ID text, 
@@ -126,7 +126,104 @@ def create_player_stats(conn, cur):
         player_stats = playercareerstats.PlayerCareerStats(ID)
         career_stats = player_stats.career_totals_regular_season.get_data_frame()
         career_stats.to_sql(name='playerstats', con=conn, if_exists='append', index=False)
+
+
+def create_standings(conn, cur):
+    #Drop Standings Table
+    cur.execute('''DROP TABLE IF EXISTS standings''')
     
+    #Create Standings Table
+    cur.execute('''CREATE TABLE standings
+                (LeagueID text,
+                SeasonID text,
+                TeamID text,
+                TeamCity text,
+                TeamName text,
+                Conference text,
+                ConferenceRecord text,
+                PlayoffRank text,
+                ClinchIndicator text,
+                Division text,
+                DivisionRecord text,
+                DivisionRank text,
+                WINS text,
+                LOSSES text,
+                WinPCT text,
+                LeagueRank text,
+                Record text,
+                HOME text,
+                ROAD text,
+                L10 text,
+                Last10Home text,
+                Last10Road text,
+                OT text,
+                ThreePTSOrLess text,
+                TenPTSOrMore text,
+                LongHomeStreak text,
+                strLongHomeStreak text,
+                LongRoadStreak text,
+                strLongRoadStreak text,
+                LongWinStreak text,
+                LongLossStreak text,
+                CurrentHomeStreak text,
+                strCurrentHomeStreak text,
+                CurrentRoadStreak text,
+                strCurrentRoadStreak text,
+                CurrentStreak text,
+                strCurrentStreak text,
+                ConferenceGamesBack text,
+                DivisionGamesBack text,
+                ClinchedConferenceTitle text,
+                ClinchedDivisionTitle text,
+                ClinchedPlayoffBirth text,
+                EliminatedConference text,
+                EliminatedDivision text,
+                AheadAtHalf text,
+                BehindAtHalf text,
+                TiedAtHalf text,
+                AheadAtThird text,
+                BehindAtThird text,
+                TiedAtThird text,
+                Score100PTS text,
+                OppScore100PTS text,
+                OppOver500 text,
+                LeadInFGPCT text,
+                LeadInReb text,
+                FewerTurnovers text,
+                PointsPG text,
+                OppPointsPG text,
+                DiffPointsPG text,
+                vsEast text,
+                vsAtlantic text,
+                vsCentral text,
+                vsSoutheast text,
+                vsWest text,
+                vsNorthwest text,
+                vsPacific text,
+                vsSouthwest text,
+                Jan text,
+                Feb text,
+                Mar text,
+                Apr text,
+                May text,
+                Jun text,
+                Jul text,
+                Aug text,
+                Sep text,
+                Oct text,
+                Nov text,
+                Dec text,
+                PreAS text,
+                PostAS text)''')
+
+    seasons = ["2015-16", "2016-17"]
+    all_teams = teams.get_teams()
+
+    for s in seasons:
+        standings = leaguestandings.LeagueStandings(season=s).get_data_frames()
+        for team_stand in standings:
+            team_stand.to_sql(name='standings', con=conn, if_exists='append', index=False)
+
 def main():
     conn = sqlite3.connect('example.db')
     cur = conn.cursor()
@@ -134,7 +231,8 @@ def main():
     # create_gamelogs(conn,cur)
     #create_rosters(conn, cur)
     #create_player_stats(conn, cur) #!!!!WARNING, DO NOT RUN, OPERATION Takes 1.5hrs!!!###
-    
+    # create_standings(conn,cur)
+
     '''
     cur.execute('SELECT * FROM playerstats')
     print(len(cur.fetchall()))
