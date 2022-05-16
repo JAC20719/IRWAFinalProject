@@ -57,6 +57,33 @@ class EOSClassifier:
             return True
         except ValueError:
             return False
+
+    def standing_features(self, team_standings):
+        feats = []
+        for i in team_standings:
+            # print(i)
+            if i == None or '- ' in i or 'W' in i or 'L' in i or i.isalpha() or len(i)==0:
+                i = 0.0
+            elif re.search("[0-9]{1}-[0-9]{1}",i) != None:
+                nums = i.split('-')
+                if len(nums) == 2:
+                    win_pct = 0.0
+                    # print(nums[0], nums[1])
+                    w = float(nums[0])
+                    l = float(nums[1])
+                    if (w + l == 0):
+                        win_pct = 0.0
+                    else: 
+                        win_pct = w / (w + l)
+                    # (float(f'{s:.3f}'))
+                    win_pct = float(f'{win_pct:.3f}')
+                    i = win_pct
+                    # print(i)
+            else:
+                i = float(i)
+            # print(i)
+            feats.append(i)
+        return feats
     
     def extract_features(self, array):
         #Return the list of features from the parsed data
@@ -146,57 +173,12 @@ class EOSClassifier:
         home_team_standings = db_operations.get_standings(home_team_id, season)[6:]
         away_team_standings = db_operations.get_standings(away_team_id, season)[6:]
 
-        # print("h standing features")
-        sim1 = []
-        for i in home_team_standings:
-            # print(i)
-            if i == None or '- ' in i or 'W' in i or 'L' in i or i.isalpha() or len(i) == 0:
-                i = 0.0
-            elif re.search("[0-9]{1}-[0-9]{1}",i) != None:
-                nums = i.split('-')
-                if len(nums) == 2:
-                    win_pct = 0.0
-                    # print(nums[0], nums[1])
-                    w = float(nums[0])
-                    l = float(nums[1])
-                    if (w + l == 0):
-                        win_pct = 0.0
-                    else: 
-                        win_pct = w / (w + l)
-                    # (float(f'{s:.3f}'))
-                    win_pct = float(f'{win_pct:.3f}')
-                    i = win_pct
-                    # print(i)
-            else:
-                i = float(i)
-            # print(i)
-            features.append(i)
-            sim1.append(i)
-        # print(home_team_standings)
-        
-        sim2 = []
-        for j in away_team_standings:
-            # print(j)
-            if j == None or '- ' in j or 'W' in j or 'L' in j or j.isalpha() or len(j) == 0:
-                j = 0.0
-            elif re.search("[0-9]{1}-[0-9]{1}",j) != None:
-                nums = j.split('-')
-                if len(nums) == 2:
-                    win_pct = 0.0
-                    w = float(nums[0])
-                    l = float(nums[1])
-                    if (w + l == 0):
-                        win_pct = 0.0
-                    else: 
-                        win_pct = w / (w + l)
-                    # (float(f'{s:.3f}'))
-                    win_pct = float(f'{win_pct:.3f}')
-                    j = win_pct
-                    # print(i)
-            else:
-                j = float(j)
-            features.append(j)
-            sim2.append(j)
+        sim1 = self.standing_features(home_team_standings)
+        for feat in sim1:
+            features.append(feat)
+        sim2 = self.standing_features(away_team_standings)
+        for feat in sim2:
+            features.append(feat)
             
         similarity = cosine_sim(sim1, sim2)
         features.append(similarity)
