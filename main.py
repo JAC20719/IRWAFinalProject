@@ -101,6 +101,7 @@ class EOSClassifier:
                     away_team_stats.append(float(f'{s:.3f}'))
                 else:
                     away_team_stats.append(0)
+        '''
         features = []
         features.append(home_team_stats[0])
         features.append(away_team_stats[0])
@@ -108,7 +109,8 @@ class EOSClassifier:
         features = home_team_stats
         for f in away_team_stats:
             features.append(f)
-        '''
+        
+        
         DOHome = (.4*home_team_stats[3])-(.25*home_team_stats[16])+(.2*home_team_stats[10])+(.15*home_team_stats[9])
         DOAway = (.4*away_team_stats[3])-(.25*away_team_stats[16])+(.2*away_team_stats[10])+(.15*away_team_stats[9])
 
@@ -128,12 +130,12 @@ class EOSClassifier:
         
         similarity= cosine_sim(c3, c4)
         features.append(similarity)
-
+        
         home_team_standings = db_operations.get_standings(home_team_id, season)[6:]
-        print(home_team_standings)
         away_team_standings = db_operations.get_standings(away_team_id, season)[6:]
 
         # print("h standing features")
+        sim1 = []
         for i in home_team_standings:
             # print(i)
             if i == None or '- ' in i or 'W' in i or 'L' in i or i.isalpha():
@@ -141,20 +143,26 @@ class EOSClassifier:
             elif re.search("[0-9]{1}-[0-9]{1}",i) != None:
                 nums = i.split('-')
                 if len(nums) == 2:
+                    win_pct = 0.0
                     # print(nums[0], nums[1])
                     w = float(nums[0])
                     l = float(nums[1])
                     if (w + l == 0):
-                        win_pct == 0.0
+                        win_pct = 0.0
                     else: 
                         win_pct = w / (w + l)
                     # (float(f'{s:.3f}'))
                     win_pct = float(f'{win_pct:.3f}')
-                    i = str(win_pct)
+                    i = win_pct
                     # print(i)
+            else:
+                i = float(i)
             # print(i)
             features.append(i)
+            sim1.append(i)
         # print(home_team_standings)
+        
+        sim2 = []
         for j in away_team_standings:
             # print(j)
             if j == None or '- ' in j or 'W' in j or 'L' in j or j.isalpha():
@@ -162,17 +170,24 @@ class EOSClassifier:
             elif re.search("[0-9]{1}-[0-9]{1}",j) != None:
                 nums = j.split('-')
                 if len(nums) == 2:
+                    win_pct = 0.0
                     w = float(nums[0])
                     l = float(nums[1])
                     if (w + l == 0):
-                        win_pct == 0.0
+                        win_pct = 0.0
                     else: 
                         win_pct = w / (w + l)
                     # (float(f'{s:.3f}'))
                     win_pct = float(f'{win_pct:.3f}')
-                    j = str(win_pct)
+                    j = win_pct
                     # print(i)
+            else:
+                j = float(j)
             features.append(j)
+            sim2.append(j)
+            
+        similarity = cosine_sim(sim1, sim2)
+        features.append(similarity)
         
         # home/away feature (0.56)
         '''
