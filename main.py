@@ -71,6 +71,18 @@ class EOSClassifier:
         game_date = array[1]        
         #print(game_id, game_date, home_team, away_team)
         
+        if home_team == "NOH":
+            home_team = "NOP"
+        if home_team == "CHB":
+            home_team = "CHA"
+        if home_team == "NJN":
+            home_team = "BKN"
+        if away_team == "NOH":
+            away_team = "NOP"
+        if away_team == "CHB":
+            away_team = "CHA"
+        if away_team == "NJN":
+            away_team = "BKN"
         home_team_id = teams.find_team_by_abbreviation(home_team)["id"]
         away_team_id = teams.find_team_by_abbreviation(away_team)["id"]
 
@@ -138,7 +150,7 @@ class EOSClassifier:
         sim1 = []
         for i in home_team_standings:
             # print(i)
-            if i == None or '- ' in i or 'W' in i or 'L' in i or i.isalpha():
+            if i == None or '- ' in i or 'W' in i or 'L' in i or i.isalpha() or len(i) == 0:
                 i = 0.0
             elif re.search("[0-9]{1}-[0-9]{1}",i) != None:
                 nums = i.split('-')
@@ -165,7 +177,7 @@ class EOSClassifier:
         sim2 = []
         for j in away_team_standings:
             # print(j)
-            if j == None or '- ' in j or 'W' in j or 'L' in j or j.isalpha():
+            if j == None or '- ' in j or 'W' in j or 'L' in j or j.isalpha() or len(j) == 0:
                 j = 0.0
             elif re.search("[0-9]{1}-[0-9]{1}",j) != None:
                 nums = j.split('-')

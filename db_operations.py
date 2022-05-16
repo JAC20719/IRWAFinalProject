@@ -101,7 +101,9 @@ def get_player_stats(team_id,season):
         query = 'SELECT * FROM playerstats WHERE PLAYER_ID = ?'
         c.execute(query, (ID[0], ))
         player_stats = c.fetchall()
-        player_stats_vec = list(player_stats[0])
+        player_stats_vec = []
+        if len(player_stats) >= 1:
+            player_stats_vec = list(player_stats[0])
         all_players_stats.append(player_stats_vec)
     return all_players_stats
     #Add more functionality to return all the player's stats for that season and player_id
@@ -112,7 +114,7 @@ def get_standings(team_id, season_id):
 
     query = 'SELECT * FROM standings WHERE TeamID = ? and SeasonID = ?'
     c.execute(query, (team_id, season_id))
-    return c.fetchall()
+    return list(c.fetchall()[0])
 
 
 def main():
@@ -121,6 +123,7 @@ def main():
     # print(c.fetchall())
     #print(get_gameID("22015", "DET", "CLE"))
     #print(get_player_stats("1610612739","2015"))
+    #print(get_standings("1610612739", "22015"))
     
     '''
     source = requests.get("https://api.lineups.com/nba/fetch/lineups/gateway").json()
